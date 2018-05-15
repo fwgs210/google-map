@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Service Search App</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <script defer src="https://use.fontawesome.com/releases/v5.0.9/js/all.js" integrity="sha384-8iPTk2s/jMVj81dnzb/iFR2sdA7u06vHJyyLlAd4snFpCl/SnyUjRrbdJsw1pGIl" crossorigin="anonymous"></script>
+    <!-- jQuery -->
+    <script src="http://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+    <!-- bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #custom-map {
+        height: 600px;
+        width: 100%;
+        margin:auto;
+      }
+      #map-sidebar, .walk-score-block, .map-wrapper {
+        padding: 15px;
+        background-color: #fff;
+        box-shadow: 0px 3px 8px -4px rgba(0,0,0,0.15);
+      }
+      .map-detail {
+        max-width: 320px;
+        font-family: Poppins,sans-serif;
+      }
+      .map-detail h4 {
+        font-size: 1.25rem;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+      .map-detail p {
+        font-size: 1rem;
+        line-height: 1.5;
+        margin-bottom: 10px;
+      }
+      .map-detail a.link {
+        font-weight: bold;
+        color: #07569a;
+      }
+      #map-sidebar {
+        font-family: Poppins,sans-serif;
+      }
+      #map-sidebar .ui-state-default {
+        background: none;
+        border: none;
+        padding: .7rem;
+        border-radius: 0;
+        margin-top: 5px;
+        font-size: 1.05rem;
+      }
+      #map-sidebar .ui-state-active {
+        color: #a24023;
+        border: none;
+        border-bottom: 1px solid #a24023;
+      }
+      #map-sidebar .ui-state-default .fa-angle-down, #map-sidebar .ui-state-default .fa-angle-right {
+        margin-right: 5px;
+      }
+      #map-sidebar .ui-state-default .fa-angle-down {
+        display: none;
+      }
+      #map-sidebar .ui-state-active .fa-angle-right {
+        display: none;
+      }
+      #map-sidebar .ui-state-active .fa-angle-down {
+        display: inline-block;
+      }
+      #map-sidebar .ui-widget-content {
+        border: none; 
+        border-radius: 0;
+      }
+      .scroll-content {
+      	max-height: 240px;
+      }
+      #map-sidebar ul {
+        list-style-type: none;
+        padding: 0;
+      }
+      #map-sidebar ul li {
+        font-size: 0.85rem;
+        line-height: 1.5;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+      }
+      #map-sidebar ul li img {
+        width: 24px;
+        margin-right: 10px;
+        align-self: flex-start;
+      }
+      #map-sidebar ul li a {
+        cursor: pointer;
+      }
+      .walk-score-block {
+        margin-bottom: 20px;
+      }
+      .walk-score {
+        display: flex;
+        align-items: center;
+        font-size: 1rem;
+        font-family: Poppins,sans-serif;
+      }
+      .walk-score svg {
+        color: #a24023;
+        margin-right: 15px;
+        font-size: 1.25rem;
+        width: 20px !important;
+      }
+      .path-icon {
+        width: 25px;
+        background-color: #fcca07;
+        height: 5px;
+        margin-right: 15px;
+      }
+      .path-icon.with-dot {
+        display: flex;
+        justify-content: space-evenly;
+        align-items: center;
+      }
+      .path-icon .dotted {
+          width: 3px;
+          height: 5px;
+          background: #fff;
+      }
+      .green-park-icon {
+		    width: 25px;
+  	    background-color: #37aa00;
+  	    height: 12px;
+  	    margin-right: 15px;
+      }
+      @media all and (max-width: 768px) {
+        .map-detail {
+          max-width: 200px;
+        }
+        .map-detail img {
+          max-width: 100% !important;
+        }
+      }
+    </style>
+
+  </head>
+  <body style="background-color: #fafafa">
+    <section>
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-xs-12 col-sm-8 col-md-9">
+            <article class="map-wrapper">
+              <div id="custom-map"></div>
+            </article>
+          </div>
+          <div class="col-xs-12 col-sm-4 col-md-3">
+            <aside class="walk-score-block">
+              <div class="row">
+                <div class="col-xs-12 col-sm-12">
+                  <summary class="walk-score">
+                    <i class="fas fa-street-view"></i>
+                    Walk Score:&nbsp;<strong>100</strong>
+                  </summary>
+                  <summary class="walk-score">
+                    <i class="fas fa-subway"></i>
+                    Transit Score:&nbsp;<strong>100</strong>
+                  </summary>         
+                </div>
+                <div class="col-xs-12 col-sm-12">
+                  <summary class="walk-score">
+                    <i class="fas fa-dot-circle" style="color: #E1D9C5"></i>
+                    3 min walk
+                  </summary>
+                  <summary class="walk-score">
+                    <i class="fas fa-dot-circle" style="color: #CACECF"></i>
+                    6 min walk
+                  </summary>
+                </div>
+              </div>
+            </aside>
+            <article id="map-sidebar">
+              <h4 id="restaurants" data-panel="restaurant" data-range="1000">
+                <i class="fas fa-angle-right"></i>
+                <i class="fas fa-angle-down"></i>
+                Food & Coffee
+              </h4>
+              <div data-content="restaurants-content">
+                <article class="scroll-content"><ul></ul></article>
+              </div>
+              <h4 id="gyms" data-panel="gym" data-range="500">
+                <i class="fas fa-angle-right"></i>
+                <i class="fas fa-angle-down"></i>
+                Fitness and Lifestyle
+              </h4>
+              <div data-content="gyms-content">
+                <article class="scroll-content"><ul></ul></article>
+              </div>
+              <h4 id="transit" data-panel="subway_station" data-range="1200">
+                <i class="fas fa-angle-right"></i>
+                <i class="fas fa-angle-down"></i>
+                Transit
+              </h4>
+              <div data-content="transit-content">
+                <article class="scroll-content"><ul></ul></article>
+                <summary class="walk-score" style="margin-top: 20px;">
+                  <i class="path-icon"></i>
+                  <strong>Subway</strong>
+                </summary>
+                <summary class="walk-score" style="margin-top: 10px;">
+                  <i class="path-icon" style="background-color: #D9272E"></i> 
+                  <strong>Streetcars</strong>
+                </summary>
+                <summary class="walk-score" style="margin-top: 10px;">
+                  <i class="path-icon" style="background-color: #30B34B"></i>
+                  <strong>Go Train</strong>
+                </summary>
+              </div>
+              <h4 id="walk" data-panel="walk">
+                <i class="fas fa-angle-right"></i>
+                <i class="fas fa-angle-down"></i>
+                PATH & Bike Lanes
+              </h4>
+              <div data-content="walk-content">
+                <summary class="walk-score" style="margin-top: 10px;">
+                  <i class="path-icon" style="background-color: #d68442;"></i>
+                  <strong>2 min walk to Yonge / King</strong>
+                </summary>
+                <summary class="walk-score" style="margin-top: 10px;">
+                  <i class="path-icon with-dot" style="background-color: #d68442;"><span class="dotted"></span><span class="dotted"></span></i>
+                  <strong>7 min walk to Union Station</strong>
+                </summary>
+                <summary class="walk-score" style="margin-top: 10px;">
+                  <i class="path-icon" style="background-color: #006747"></i>
+                  <strong>Bike Lanes</strong>
+                </summary>
+              </div>
+              <h4 id="park" data-panel="park" data-range="250">
+                <i class="fas fa-angle-right"></i>
+                <i class="fas fa-angle-down"></i>
+                Parks
+              </h4>
+              <div data-content="park-content">
+                <article class="scroll-content"><ul></ul></article>
+                <summary class="walk-score" style="margin-top: 20px;">
+                  <i class="green-park-icon"></i>
+                  <strong>Public Parks</strong>
+                </summary>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA722wIWSKQO2kady4xv37e0HqpbwpjEY0&libraries=places" type="text/javascript"></script>
+    <script>
+
+        jQuery(function() {
+          let app = {};
+          let map;
+          let main;
+
+          // if you want multi infowindow open at the same time, put this inside functions
+          const infowindow = new google.maps.InfoWindow();
+
+          // location / style
+
+          const _65king = {
+            lat: 43.649480,
+            lng: -79.375481,
+            zoom: 15,
+            scrollable: false,
+            styles: [{"featureType":"administrative","elementType":"labels.text.fill","stylers":[{"color":"#444444"}]},{"featureType":"landscape","elementType":"all","stylers":[{"color":"#f2f2f2"}]},{"featureType":"poi","elementType":"all","stylers":[{"visibility":"off"}]},{"featureType":"road","elementType":"all","stylers":[{"saturation":-100},{"lightness":45}]},{"featureType":"road.highway","elementType":"all","stylers":[{"visibility":"simplified"}]},{"featureType":"road.arterial","elementType":"labels.icon","stylers":[{"visibility":"off"}]},{"featureType":"transit","elementType":"all","stylers":[{"visibility":"off"}]},{"featureType":"water","elementType":"all","stylers":[{"color":"#46bcec"},{"visibility":"on"}]}]
+          }
+
+          const map_shapes = {
+	          arrowLeft: {
+		          path: 'M -1,0 1,0 0,2 z',
+		          fillColor: '#30B34B',
+		          fillOpacity: .5
+		      },
+
+	          arrowRight: {
+		          path: 'M -1,0 1,0 0,-2 z',
+		          fillColor: '#30B34B',
+		          fillOpacity: .5
+		      },
+		      // green parks
+	       	  greenParks: {
+	        	park1: [
+		            {lat: 43.650277, lng: -79.375603},
+		            {lat: 43.650361, lng: -79.375206},
+		            {lat: 43.650634, lng: -79.375302},
+		            {lat: 43.650554, lng: -79.375715}
+		        ],
+		        park2: [
+		            {lat: 43.648101, lng: -79.375996},  
+		            {lat: 43.647521, lng: -79.375732}, 
+		            {lat: 43.648141, lng: -79.374441},
+		            {lat: 43.648252, lng: -79.374553},
+		            {lat:43.648299, lng:-79.374581},
+		            {lat:43.648347, lng:-79.374601},
+		            {lat:43.648391, lng:-79.374602},
+		            {lat:43.648431, lng:-79.374590}
+		        ],
+		        park3: [
+		            {lat:43.649179, lng:-79.372272},
+		            {lat:43.649269, lng:-79.372065},
+		            {lat:43.650274, lng:-79.372502},
+		            {lat:43.650224, lng:-79.372724}
+		        ],
+		        park4: [
+			        {lat:43.650116, lng:-79.373646},
+			        {lat:43.650384, lng:-79.372426},
+			        {lat:43.650760, lng:-79.372588},
+			        {lat:43.650865, lng:-79.372138},
+			        {lat:43.651507, lng:-79.372403},
+			        {lat:43.651552, lng:-79.372628},
+			        {lat:43.651562, lng:-79.372793},
+			        {lat:43.651550, lng:-79.372972},
+			        {lat:43.651339, lng:-79.373947},
+			        {lat:43.650834, lng:-79.373716},
+			        {lat:43.650787, lng:-79.373932}
+			    ]
+	      	  },
+	      	  // Subway path
+	          subwayCord: [
+	              {lat: 43.659686, lng: -79.390788}, // Queens park
+	              {lat: 43.654862, lng: -79.388381}, // St. Pattrick
+	              {lat: 43.647633, lng: -79.384529}, // St. Andrew
+	              {lat: 43.645773, lng: -79.383460}, // Curve
+	              {lat: 43.645617, lng: -79.383202}, // Curve
+	              {lat: 43.645446, lng: -79.382698}, // Curve
+	              {lat: 43.645403, lng: -79.382007}, // Curve
+	              {lat: 43.645636, lng: -79.380726}, // Union
+	              {lat: 43.645943, lng: -79.379361}, // Curve
+	              {lat: 43.646254, lng: -79.378675}, // Curve
+	              {lat: 43.646502, lng: -79.378246}, // Curve
+	              {lat: 43.646999, lng: -79.377838}, // Curve
+	              {lat: 43.647543, lng: -79.377688}, // Curve
+	              {lat: 43.648381, lng: -79.377902}, // Curve
+	              {lat: 43.649215, lng: -79.378140}, // King
+	              {lat: 43.652279, lng: -79.379477}, // Queen
+	              {lat: 43.656242, lng: -79.381017}, // Dundas
+	              {lat: 43.661379, lng: -79.383107} // College
+	          ],
+	          // Go train path
+		      goTrainPath: [
+        				{lat:43.640393, lng: -79.401429},
+        				{lat:43.641714, lng: -79.393492},
+        				{lat:43.643494, lng: -79.384497},
+        				{lat:43.646404, lng: -79.370185},
+        				{lat:43.648376, lng: -79.361375}
+	          ],
+	          // Bike path
+		      bikePath: [
+        				{lat: 43.648744, lng: -79.392664},
+        				{lat: 43.649893, lng: -79.387170},
+        				{lat: 43.650778, lng: -79.387514},
+        				{lat: 43.649893, lng: -79.387170},
+        				{lat: 43.652129, lng: -79.377021},
+        				{lat: 43.649893, lng: -79.387170},
+        				{lat: 43.648638, lng: -79.386616},
+        				{lat: 43.647167, lng: -79.393538},
+        				{lat: 43.648638, lng: -79.386616},
+        				{lat: 43.651595, lng: -79.373160},
+        				{lat: 43.648638, lng: -79.386616},
+        				{lat: 43.639594, lng: -79.382791},
+        				{lat: 43.638923, lng: -79.386679},
+        				{lat: 43.637656, lng: -79.392328},
+        				{lat: 43.638923, lng: -79.386679},
+        				{lat: 43.639594, lng: -79.382791},
+        				{lat: 43.640085, lng: -79.380154},
+        				{lat: 43.641193, lng: -79.376860},
+        				{lat: 43.642921, lng: -79.377809},
+        				{lat: 43.641193, lng: -79.376860},
+        				{lat: 43.641955, lng: -79.374713},
+        				{lat: 43.646888, lng: -79.376954},
+        				{lat: 43.641955, lng: -79.374713},
+        				{lat: 43.644957, lng: -79.366114}
+	          ],
+        	  // Street car path
+        	  streetCarPath: [
+        				{lat: 43.645840, lng:-79.393183},
+        				{lat: 43.651994, lng:-79.365061}
+        	          ],
+        	  streetCarPath2: [
+        				{lat: 43.649053, lng:-79.394969},
+        				{lat: 43.655249, lng:-79.366243}
+	          ],
+            walkPathToKing: [
+                {lat: 43.649610, lng:-79.375527},
+                {lat: 43.649082, lng:-79.377970}
+                    ],
+            walkPathToUnion: [
+                {lat: 43.649082, lng:-79.377970},
+                {lat: 43.649374, lng:-79.378177}, 
+                {lat:43.649303, lng:-79.378488},
+                {lat:43.648383, lng:-79.378605},
+                {lat:43.648189, lng:-79.378267},
+                {lat:43.647234, lng:-79.377870},
+                {lat:43.646959, lng:-79.379195},
+                {lat:43.646140, lng:-79.378814},
+                {lat:43.645922, lng:-79.378927},
+                {lat:43.645751, lng:-79.379216},
+                {lat:43.645472, lng:-79.379813} 
+                // 43.645261,-79.380631
+                    ],
+          }
+
+
+	      const park1 = new google.maps.Polygon({
+	          paths: map_shapes.greenParks.park1,
+	          strokeColor: '#7dc35c',
+	          strokeOpacity: 1,
+	          strokeWeight: 3,
+	          fillColor: '#7dc35c',
+	          fillOpacity: 0.5,
+	          zIndex: 2
+	      });
+
+	      const park2 = new google.maps.Polygon({
+	          paths: map_shapes.greenParks.park2,
+	          strokeColor: '#7dc35c',
+	          strokeOpacity: 1,
+	          strokeWeight: 3,
+	          fillColor: '#7dc35c',
+	          fillOpacity: 0.5,
+	          zIndex: 2
+	      });
+
+	      const park3 = new google.maps.Polygon({
+	          paths: map_shapes.greenParks.park3,
+	          strokeColor: '#7dc35c',
+	          strokeOpacity: 1,
+	          strokeWeight: 3,
+	          fillColor: '#7dc35c',
+	          fillOpacity: 0.5,
+	          zIndex: 2
+	      });
+
+	      const park4 = new google.maps.Polygon({
+	          paths: map_shapes.greenParks.park4,
+	          strokeColor: '#7dc35c',
+	          strokeOpacity: 1,
+	          strokeWeight: 3,
+	          fillColor: '#7dc35c',
+	          fillOpacity: 0.5,
+	          zIndex: 2
+	      });
+
+	      // Subway path
+          const subwayPath = new google.maps.Polyline({
+              path: map_shapes.subwayCord,
+              icons: [
+	            {
+	              icon: map_shapes.arrowLeft,
+	              offset: '0%'
+	            },
+	            {
+	              icon: map_shapes.arrowRight,
+	              offset: '100%'
+	            }
+          	  ],
+              geodesic: true,
+              strokeColor: '#fcca07',
+              strokeOpacity: .5,
+              strokeWeight: 5,
+              zIndex: 2
+          });
+
+          // Go train path
+          const goTrain = new google.maps.Polyline({
+              path: map_shapes.goTrainPath,
+              icons: [
+	            {
+	              icon: map_shapes.arrowLeft,
+	              offset: '0%'
+	            },
+	            {
+	              icon: map_shapes.arrowRight,
+	              offset: '100%'
+	            }
+          	  ],
+              geodesic: true,
+              strokeColor: '#30B34B',
+              strokeOpacity: .75,
+              strokeWeight: 3,
+              zIndex: 2
+          });
+
+          // Bike path
+          const bikeLane = new google.maps.Polyline({
+              path: map_shapes.bikePath,
+              geodesic: true,
+              strokeColor: '#006747',
+              strokeOpacity: .75,
+              strokeWeight: 3,
+              zIndex: 2
+          });
+
+          // Walk path
+          const walkPathToKing = new google.maps.Polyline({
+              path: map_shapes.walkPathToKing,
+              geodesic: true,
+              strokeColor: '#d68442',
+              strokeOpacity: .75,
+              strokeWeight: 4,
+              zIndex: 2
+          });
+
+          const walkPathToUnion = new google.maps.Polyline({
+              path: map_shapes.walkPathToUnion,
+              geodesic: true,
+              strokeColor: '#d68442',
+              strokeOpacity: 0,
+              strokeWeight: 4,
+              icons: [{
+                icon: {
+                  path: 'M 0,-1 0,0',
+                  strokeOpacity: .75,
+                  scale: 4
+                },
+                offset: '0',
+                repeat: '10px'
+              }],
+              zIndex: 2
+          });
+
+
+          // Street car path
+          const streetCar = new google.maps.Polyline({
+              path: map_shapes.streetCarPath,
+              icons: [
+	            {
+	              icon: map_shapes.arrowLeft,
+	              offset: '0%'
+	            },
+	            {
+	              icon: map_shapes.arrowRight,
+	              offset: '100%'
+	            }
+          	  ],
+              geodesic: true,
+              strokeColor: '#D9272E',
+              strokeOpacity: .7,
+              strokeWeight: 3,
+              zIndex: 2
+          });
+
+          const streetCar2 = new google.maps.Polyline({
+              path: map_shapes.streetCarPath2,
+              icons: [
+	            {
+	              icon: map_shapes.arrowLeft,
+	              offset: '0%'
+	            },
+	            {
+	              icon: map_shapes.arrowRight,
+	              offset: '100%'
+	            }
+          	  ],
+              geodesic: true,
+              strokeColor: '#D9272E',
+              strokeOpacity: .7,
+              strokeWeight: 3,
+              zIndex: 2
+          });
+
+          // marker and logo
+          const logo = 'http://dev.cbrecanada.com/65kingeast/wp-content/uploads/2018/03/65kingeastlogo.png'
+          const restaurants = {
+            icon: 'http://dev.cbrecanada.com/65kingeast/wp-content/uploads/2018/04/restaurant-marker-wBG.png',
+            icon2: 'http://dev.cbrecanada.com/65kingeast/wp-content/uploads/2018/04/coffee-marker-wBG.png',
+            id: 'restaurants',
+            content: 'restaurants-content',
+            search_more: true,
+            markers: [],
+            places: [
+            	{place_name:"Jump", place_id:"ChIJMT8zEy3L1IkRndhPq4mIQXk", position: {lat: 43.647968, lng:-79.378145}, address:"18 Wellington St W", type:""},
+            	{place_name:"Dineen Coffee Co", place_id:"ChIJB1814DLL1IkRhj-K_tYwSio", position: {lat: 43.651076, lng:-79.379255}, address:"140 Yonge St", type:"coffee"},
+            	{place_name:"The Chase Fish and Oyster", place_id:"ChIJ13xO78EzK4gRdwEiU8N4oCk", position: {lat: 43.651060, lng:-79.379349}, address:"10 Temperance St", type:""},
+            	{place_name:"Sud Forno", place_id:"ChIJ9aQs5zLL1IkRtK-gP0RXd_0", position: {lat: 43.650916, lng:-79.378785}, address:"132 Yonge St", type:""},
+            	{place_name:"Pick 6ix", place_id:"ChIJwwBpli3L1IkRcCeczwR6ONA", position: {lat: 43.647605, lng:-79.376650}, address:"33 Yonge St", type:""},
+            	{place_name:"Oliver & Bonacini Café", place_id:"ChIJk2BJvS3L1IkRqyDWmyiQhg8", position: {lat: 43.647605, lng:-79.376650}, address:"33 Yonge St", type:""},
+            	{place_name:"Woods Restaurant & Bar", place_id:"ChIJqWFmAzLL1IkRSTELEp2iOHI", position: {lat: 43.648974, lng:-79.375083}, address:"45 Colborne St", type:""},
+            	{place_name:"Tom Jones Steak House", place_id:"ChIJ1RXxFjLL1IkRMkyqWh4tTzk", position: {lat: 43.648974, lng:-79.375083}, address:"17 Leader Ln", type:""},
+            	{place_name:"Sam James Coffee Bar", place_id:"ChIJpSCfRzLL1IkRoYyjLAc3aV8", position: {lat: 43.650316, lng:-79.375902}, address:"15 Toronto St", type:"coffee"},
+            	{place_name:"Nami Japanese Restaurant", place_id:"ChIJz2IRNTLL1IkRo-Xf682fPIg", position: {lat: 43.650678, lng:-79.375814}, address:"55 Adelaide St E", type:""},
+            	{place_name:"Terroni", place_id:"ChIJT1kRzTPL1IkRqYD-w3lcprg", position: {lat: 43.650861, lng:-79.375703}, address:"57 Adelaide St E", type:""},
+            	{place_name:"The Keg Steakhouse + Bar", place_id:"ChIJUUdv0S3L1IkRTroEMXlggRc", position: {lat: 43.646671, lng:-79.374980}, address:"26 The Esplanade", type:""},
+            	{place_name:"Tim Hortons", place_id:"ChIJc9lJSM00K4gRsUysM1qJNSg", position: {lat: 43.650341, lng:-79.380521}, address:"333 Bay St", type:"coffee"},
+            	{place_name:"Tim Hortons", place_id:"ChIJYypHWbg0K4gRP1O8wVGmTfc", position: {lat: 43.651370, lng:-79.379245}, address:"1 Richmond St W", type:"coffee"},
+            	{place_name:"Tim Hortons", place_id:"ChIJl6Dqki3L1IkR1CVfaMttzMM", position: {lat: 43.647605, lng:-79.376650}, address:"33 Yonge St", type:"coffee"},
+            	{place_name:"Tim Hortons", place_id:"ChIJcQGmZDLL1IkRUftlAxboh6Q", position: {lat: 43.649648, lng:-79.377090}, address:"18 King St E", type:"coffee"},
+            	{place_name:"Freshii", place_id:"ChIJu0dkJzLL1IkR6gBDSlvRD-M", position: {lat: 43.650073, lng:-79.374891}, address:"92 King St E", type:""},
+            	{place_name:"The Bier Market", place_id:"ChIJke8Cci7L1IkRZzBYtfBbdxA", position: {lat: 43.647176, lng:-79.373801}, address:"58 The Esplanade", type:""},
+            	{place_name:"iQ FOOD CO.", place_id:"ChIJV78UOy3L1IkR5sx6yuj7iWI", position: {lat: 43.647262, lng:-79.378600}, address:"181 Bay St", type:""},
+            	{place_name:"Starbucks", place_id:"ChIJ18YUOy3L1IkRvitAGC31ZXU", position: {lat: 43.647262, lng:-79.378600}, address:"181 Bay St", type:"coffee"},
+            	{place_name:"Starbucks", place_id:"ChIJo_udVC3L1IkReREdrFnC5RA", position: {lat: 43.649517, lng:-79.379636}, address:"40 King Street West", type:"coffee"},
+            	{place_name:"Starbucks", place_id:"ChIJQ8RPhDLL1IkRDiv8k6_JHdE", position: {lat: 43.649359, lng:-79.378465}, address:"4 King Street West", type:"coffee"},
+            	{place_name:"Starbucks", place_id:"ChIJTZZBqDTL1IkRmP0eAvK4Irk", position: {lat: 43.650159, lng:-79.377793}, address:"1 Adelaide St E", type:"coffee"},
+            	{place_name:"Starbucks", place_id:"ChIJpyZdfTHL1IkRhZmoT2hjIgY", position: {lat: 43.651361, lng:-79.374648}, address:"82 Adelaide St E", type:"coffee"}
+            ]
+          }
+          const transit = {
+            icon: 'http://dev.cbrecanada.com/65kingeast/wp-content/uploads/2018/04/ttc-marker.png',
+            id: 'transit',
+            content: 'transit-content',
+            search_more: false,
+            markers: []
+          }
+          const gyms = {
+            icon: 'http://dev.cbrecanada.com/65kingeast/wp-content/uploads/2018/04/gym-marker-wBG.png',
+            id: 'gyms',
+            content: 'gyms-content',
+            search_more: false,
+            markers: [],
+           	places: [
+            	{place_name:"Equinox", place_id:"ChIJs5ItnjLL1IkRdPZ9f_UvDpw", position: {lat: 43.648133, lng:-79.379509}, address:"199 Bay St", type:""},
+            	{place_name:"Goodlife Fitness Centre", place_id:"ChIJjRqf7DLL1IkR-03PdrxNSwY", position: {lat: 43.651197, lng:-79.377793}, address:"137 Yonge St", type:""}
+            ]
+          }
+          const supermarkets = {
+            icon: 'http://dev.cbrecanada.com/65kingeast/wp-content/uploads/2018/04/supermarket-marker-wBG.png',
+            id: 'supermarkets',
+            content: 'supermarkets-content',
+            search_more: false,
+            markers: []
+          }
+          const atm = {
+            icon: 'http://dev.cbrecanada.com/65kingeast/wp-content/uploads/2018/04/atm-marker.png',
+            id: 'atm',
+            content: 'atm-content',
+            search_more: false,
+            markers: []
+          }
+          const spa = {
+            icon: 'http://dev.cbrecanada.com/65kingeast/wp-content/uploads/2018/04/spa-marker-wBG.png',
+            id: 'spa',
+            content: 'spa-content',
+            search_more: false,
+            markers: []
+          }
+          const hotel = {
+            icon: 'http://dev.cbrecanada.com/65kingeast/wp-content/uploads/2018/04/hotels-marker-wBG.png',
+            id: 'hotel',
+            content: 'hotel-content',
+            search_more: false,
+            markers: []
+          }
+          const park = {
+            icon: 'http://dev.cbrecanada.com/65kingeast/wp-content/uploads/2018/04/park-marker-wBG.png',
+            id: 'park',
+            content: 'park-content',
+            search_more: false,
+            markers: [],
+            places: [
+              {place_name:"St. James Park", place_id:"ChIJewPMCzHL1IkRsUlxsXNjbqw", position: {lat: 43.650842, lng:-79.373057}, address:"120 King St E", type:""},
+              {place_name:"Market Lane Park", place_id:"ChIJK48usTHL1IkRRnMiSAlFXOk", position: {lat:43.649670, lng:-79.372338}, address:"149 King St E", type:""},
+              {place_name:"Berczy Park", place_id:"ChIJx7XZ-i3L1IkReX8OEaosNCo", position: {lat: 43.650454, lng:-79.375481}, address:"35 Wellington St E", type:""},
+              {place_name:"Courthouse Square Park", place_id:"ChIJpXHPMTLL1IkRX_AwffkagME", position: {lat: 43.648094, lng:-79.375256}, address:"10 Court St", type:""},
+            ]
+          }
+          const excludePlaces = [
+           	"ChIJI_cpHy7L1IkRlsErHs5sKdE",
+            "ChIJgYksMDLL1IkRlcdmV79frFA",
+            "ChIJiS-2gTLL1IkR8WPDufXctik",
+            "ChIJfZ4C9jLL1IkRkBV14SvzaJU"
+          ]
+
+          app.initMap = function(location) {
+            // 1. all the options for the google map are held in an object
+            app.options = {
+              center: { lat: location.lat, lng: location.lng},
+              scrollwheel: location.scrollable,
+              zoom: location.zoom,
+              styles: location.styles
+            };
+            // 2. we also select the map div with jquery, but only the first item in the array
+
+            app.mapDiv = document.querySelector('#custom-map');
+
+            // 3. which we then pass to the map method and store
+            map = new google.maps.Map(app.mapDiv, app.options);
+
+            // add center marker and hide it
+            main = new google.maps.Marker({
+                          position: app.options.center,
+                          map: map,
+                          title: '65 King Street East',
+                          visible: false
+            });
+
+            // add a click listener to center marker
+            google.maps.event.addListener(main, 'click', function() {
+              infowindow.setContent(`<div class="map-detail">
+                                            <img src=${logo} alt="65 King East" style="max-width:100px;" />
+                                          </div>`);
+              // get the lat and lng of where user click
+
+              infowindow.open(map, this);
+            })
+
+            // initiate the center info window when load the page
+            google.maps.event.trigger(main, 'click')
+
+            // center radius
+  	        const radiusTwo = new google.maps.Circle({
+  	              map: map,
+  	              center: app.options.center,
+  	              radius: 600,  
+  	              strokeWeight: 0,
+  	              fillColor: '#CACECF',
+  	              fillOpacity: 0.4
+  	        });
+  	        const radius = new google.maps.Circle({
+  	              map: map,
+  	              center: app.options.center,
+  	              radius: 360,  
+  	              strokeWeight: 0,
+  	              fillColor: '#E1D9C5',
+  	              fillOpacity: 0.5
+  	        });
+
+            radiusTwo.bindTo('center', main, 'position');
+
+            radius.bindTo('center', main, 'position');
+
+            // init main marker
+            app.addMainMarker()
+
+            console.log(app.options.center);
+          };
+
+          app.addMainMarker = () => {
+	          const mainPath = [
+			            {lat:43.649593, lng:-79.375613},
+			            {lat:43.649030, lng:-79.375398},
+			            {lat:43.649162, lng:-79.374789},
+			            {lat:43.649721, lng:-79.375028}
+			      ]
+
+  		      const mainBuilding = new google.maps.Polygon({
+  		          paths: mainPath,
+  		          strokeWeight: 2,
+  		          fillColor: '#a24023',
+  		          fillOpacity: 1,
+  		          strokeColor: '#aaaaaa',
+  		          strokeOpacity: 1,
+  		          zIndex: 3
+  		      });
+  		      mainBuilding.setMap(map)
+  		      mainBuilding.addListener('click', (event)=> mainBuildingInfo(event));
+            
+  		      function mainBuildingInfo(event) {
+
+  		        infowindow.setContent(`<div class="map-detail">
+  	                                        <img src=${logo} alt="65 King East" style="max-width:80px;" />
+  	                                      </div>`);
+  		        // get the lat and lng of where user click
+  		        infowindow.setPosition(event.latLng);
+
+  		        infowindow.open(map);
+  		      }
+
+
+
+          }
+
+          app.addUnionMarker = () => {
+            // VIA train marker
+            const via = new google.maps.Marker({
+                          position: {lat:43.644764, lng: -79.381576},
+                          map: map,
+                          animation: google.maps.Animation.DROP,
+                          icon: 'http://dev.cbrecanada.com/65kingeast/wp-content/uploads/2018/05/VIA-train-marker.png'
+            });
+
+            google.maps.event.addListener(via, 'click', function() {
+              infowindow.setContent(`<div class="map-detail">
+                                            <h4>VIA train station</h4>
+                                          </div>`);
+              infowindow.open(map, this);
+            })
+
+            // GO train marker
+            const go = new google.maps.Marker({
+                          position: {lat:43.643654, lng: -79.381404},
+                          map: map,
+                          animation: google.maps.Animation.DROP,
+                          icon: 'http://dev.cbrecanada.com/65kingeast/wp-content/uploads/2018/05/GO-transit-marker.png'
+            });
+
+            google.maps.event.addListener(go, 'click', function() {
+              infowindow.setContent(`<div class="map-detail">
+                                            <h4>GO station</h4>
+                                          </div>`);
+              infowindow.open(map, this);
+            })
+
+            // UP train marker
+            const up = new google.maps.Marker({
+                          position: {lat:43.644221, lng: -79.383528},
+                          map: map,
+                          animation: google.maps.Animation.DROP,
+                          icon: 'http://dev.cbrecanada.com/65kingeast/wp-content/uploads/2018/05/UP-marker.png'
+            });
+
+            google.maps.event.addListener(up, 'click', function() {
+              infowindow.setContent(`<div class="map-detail">
+                                            <h4>Union Pearson express</h4>
+                                          </div>`);
+              infowindow.open(map, this);
+            })
+
+            transit.markers.push(via, go, up)
+
+          }
+
+
+          app.addMarker = function(type, range, prop) {
+          	var count = 0;
+            let service = new google.maps.places.PlacesService(map);
+
+            // custom search on food and park
+            if (prop.id === 'restaurants' || prop.id ==='park') {
+              for (let a = 0; a < prop.places.length; a++) {
+
+              			  let icon = prop.icon
+
+              			  // custom coffee icon
+              			  if (prop.places[a].type === "coffee") {
+              			  	icon = prop.icon2
+              			  }
+                      
+                          const marker = new google.maps.Marker({
+                              map: map,
+                              position: prop.places[a].position,
+                              animation: google.maps.Animation.DROP,
+                              icon: icon,
+                              place_id: prop.places[a].place_id
+                          });
+                          // add single marker to makers array
+                          prop.markers.push(marker);
+                          // manually add place id to single marker
+
+                          count++;
+                          // add to search results
+                          jQuery(`[data-content="${prop.content}"] ul`).append(`
+                            <li><img src="${icon}" alt="${prop}" /><a data-id="${prop.places[a].place_id}" data-type="${prop.id}">${prop.places[a].place_name}</a></li>
+                          `);
+
+                          google.maps.event.addListener(marker, 'click', function() {
+
+                            infowindow.setContent(`
+                                  <div class="map-detail">
+                                    <div class="col-xs-12 col-sm-12">
+                                    <h4>${prop.places[a].place_name}</h4>
+                                    <p>${prop.places[a].address}</p>
+                                    </div>
+                                  </div>`);
+                            infowindow.open(map, this);
+                          });
+
+                  console.log('found')
+                  console.log(count)
+                      
+              }
+            } else {
+            	// search other category
+	            service.nearbySearch({
+	              location: app.options.center,
+	              radius: range,
+	              type: type
+	            }, (results, status, pages) => {
+	              callback(results, status, pages)
+	            });
+
+
+	            function callback(results, status, pages) {
+
+	              if (status === google.maps.places.PlacesServiceStatus.OK) {
+
+	                for (let i = 0; i < results.length; i++) {
+
+	                  
+
+	                  const place = results[i];
+
+	                  // exclude some places 
+	                  // for (let c = 0; c < excludePlaces.length; c++) {
+	                          // if (excludePlaces[c].place_id === place.place_id) {
+	                          //     console.log(place.name)
+	                          //     results.pop(place.place_id)
+	                          // } else {
+	                              // run script normally after the exclude function
+	                              const location = place.geometry.location;
+	                              const marker = new google.maps.Marker({
+	                                      map: map,
+	                                      position: location,
+	                                      animation: google.maps.Animation.DROP,
+	                                      icon: prop.icon
+	                              });
+	                              // add single marker to makers array
+	                              prop.markers.push(marker);
+	                              // manually add place id to single marker
+	                              marker.place_id = place.place_id;
+
+	                              // add to search results
+	                              jQuery(`[data-content="${prop.content}"] ul`).append(`
+	                                <li><img src="${prop.icon}" alt="${prop}" /><a data-id="${place.place_id}" data-type="${prop.id}">${place.name}</a></li>
+	                                `);
+
+	                              service.getDetails({
+	                                placeId: place.place_id
+	                              }, function(e, status) {
+
+	                                // add markers
+	                                if (status === google.maps.places.PlacesServiceStatus.OK) {
+	                                  // console.log('ok')
+	                                  google.maps.event.addListener(marker, 'click', function() {
+
+	                                    // check if it has phone number
+	                                    let phone_number;
+	                                    if (e.formatted_phone_number) {
+	                                      phone_number = `<p><a class="link" href="tel:${e.formatted_phone_number}"><i class="fas fa-phone"></i> ${e.formatted_phone_number}</a></p>`;
+	                                    } else {
+	                                      phone_number = '';
+	                                    };
+
+
+	                                    infowindow.setContent(`
+	                                      <div class="map-detail">
+	                                        <div class="col-xs-12 col-sm-12">
+	                                        <h4>${e.name}</h4>
+	                                        <p>${e.formatted_address}</p>
+	                                        ${phone_number}
+	                                        </div>
+	                                      </div>`);
+	                                    infowindow.open(map, this);
+	                                  });
+	                                } else {
+	                                  // console.log('ok too')
+	                                  
+	                                  google.maps.event.addListener(marker, 'click', function() {
+	                                    infowindow.setContent(`
+	                                      <div class="map-detail">
+	                                        <div class="col-xs-12 col-sm-12">
+	                                        <h4>${place.name}</h4>
+	                                        <p>${place.vicinity}</p>
+	                                        </div>
+	                                      </div>`);
+	                                    infowindow.open(map, this);
+
+	                                  });
+	                                };
+	                              });
+	                          // }
+	                  // }
+	                };
+	              } else {
+	                console.log('crashed!');
+	              };
+	              // only search more for restaurants
+	              // if (pages.hasNextPage && prop.search_more) {
+	              //   console.log('yes')
+	              //   pages.nextPage()
+	              // }
+	            };
+            }
+            
+
+
+          };
+
+          app.addCustomMarker = function(keyword, range, prop) {
+            console.log('worked')
+            let service = new google.maps.places.PlacesService(map);
+
+            service.nearbySearch({
+              location: app.options.center,
+              radius: range,
+              keyword: keyword
+            }, (results, status, pages) => {
+              callback(results, status, pages)
+            });
+
+            function callback(results, status, pages) {
+              if (status === google.maps.places.PlacesServiceStatus.OK) {
+                for (let i = 0; i < results.length; i++) {
+                  
+                  // one infowindow open at a time use var, multiple infowindow open at a time use const or let.
+                  const place = results[i];
+                  const location = place.geometry.location;
+                  const marker = new google.maps.Marker({
+                          map: map,
+                          position: location,
+                          animation: google.maps.Animation.DROP,
+                          icon: prop.icon
+                      });
+
+                  // add single marker to makers array
+                  prop.markers.push(marker);
+                  // manually add place id to single marker
+                  marker.place_id = place.place_id;
+
+                  // add to search results
+                  jQuery(`[data-content="${prop.content}"] ul`).append(`
+                    <li><img src="${prop.icon}" alt="${prop}" /><a data-id="${place.place_id}" data-type="${prop.id}">${place.name}</a></li>
+                    `);
+
+                  service.getDetails({
+                    placeId: place.place_id
+                  }, function(e, status) {
+                    // add markers
+                    if (status === google.maps.places.PlacesServiceStatus.OK) {
+                      console.log('ok')
+                      google.maps.event.addListener(marker, 'click', function() {
+
+                        // check if it has phone number
+                        let phone_number;
+                        if (e.formatted_phone_number) {
+                          phone_number = `<p><a class="link" href="tel:${e.formatted_phone_number}"><i class="fas fa-phone"></i> ${e.formatted_phone_number}</a></p>`;
+                        } else {
+                          phone_number = '';
+                        };
+
+
+                        infowindow.setContent(`
+                          <div class="map-detail">
+                            <div class="col-xs-12 col-sm-12">
+                            <h4>${e.name}</h4>
+                            <p>${e.formatted_address}</p>
+                            ${phone_number}
+                            </div>
+                          </div>`);
+                        infowindow.open(map, this);
+                      });
+                    } else {
+                      console.log('ok too')
+                      
+                      google.maps.event.addListener(marker, 'click', function() {
+                        infowindow.setContent(`
+                          <div class="map-detail">
+                            <div class="col-xs-12 col-sm-12">
+                            <h4>${place.name}</h4>
+                            <p>${place.vicinity}</p>
+                            </div>
+                          </div>`);
+                        infowindow.open(map, this);
+
+                      });
+                    };
+                  });
+                };
+              } else {
+                console.log('crashed!');
+              };
+              // if (pages.hasNextPage) {
+              //   pages.nextPage()
+              // }
+            };
+          };
+
+          app.removeMarker = function(prop = {makers: []}) {
+            if (prop.markers) {
+              function setMapOnAll(theMAP) {
+                for (let i = 0; i < prop.markers.length; i++) {
+                  prop.markers[i].setMap(theMAP);
+                }
+              };
+
+              setMapOnAll(null);
+              prop.markers = [];
+            } else {
+              console.log('there are no markers for this category.')
+            }
+          };
+
+          
+          app.addOrRemoveGreenPark = (prop) => {
+          	park1.setMap(prop);
+          	park2.setMap(prop);
+          	park3.setMap(prop);
+          	park4.setMap(prop);
+          }
+
+          app.removeAllMarker = function() {
+            app.removeMarker(restaurants);
+            app.removeMarker(gyms);
+            app.removeMarker(supermarkets)
+            app.removeMarker(transit)
+            app.removeMarker(atm)
+            app.removeMarker(spa)
+            app.removeMarker(hotel)
+            app.removeMarker(park)
+            subwayPath.setMap(null);
+            app.addOrRemoveGreenPark(null)
+            bikeLane.setMap(null)
+            walkPathToKing.setMap(null)
+            walkPathToUnion.setMap(null)
+
+            goTrain.setMap(null)
+          	streetCar.setMap(null)
+          	streetCar2.setMap(null)
+          }
+
+          jQuery( "#map-sidebar" ).accordion({
+            heightStyle: "content",
+            collapsible: true,
+            active: false,
+            icons: false
+          });
+
+          // when soemone clicks on the places in the sidebar, find the marker asoicated with it
+          jQuery('[data-content] ul').on('click', 'a', function() {
+            
+            const place_id = this.dataset.id;
+            // // find the marker with the id that matches
+            const marker = eval(this.dataset.type).markers.find(function(marker) {
+                if(marker.place_id === place_id) {
+                  return true;
+                }
+            });
+            google.maps.event.trigger(marker, 'click');
+          });
+
+          // when someone clicks category, make the ajax call and pull the data from this category
+          jQuery('[data-panel]').on('click', function(){
+
+            jQuery('#map-sidebar ul li').remove();
+            app.removeAllMarker();
+
+            if(this.getAttribute('aria-expanded') === 'true') {              
+              // check on multi-category
+              if (this.dataset.panel.indexOf(',') > -1) {
+                const category = this.dataset.panel.split(',')
+                console.log(category)
+                for (let num = 0; num < category.length; num++) {
+                  // add custom search marker
+                  app.addCustomMarker(category[num], parseInt(this.dataset.range), eval(this.getAttribute('id')))
+                }
+              } else if (this.getAttribute('id') === 'walk') {
+              	bikeLane.setMap(map)
+                walkPathToKing.setMap(map)
+                walkPathToUnion.setMap(map)
+              } else {
+                // single category
+                app.addMarker(this.dataset.panel, parseInt(this.dataset.range), eval(this.getAttribute('id')));
+                // add subway path to transit
+                if (this.getAttribute('id') === 'transit') {
+                  app.addUnionMarker();
+                 	subwayPath.setMap(map);
+                 	goTrain.setMap(map)
+            			streetCar.setMap(map)
+            			streetCar2.setMap(map)
+                }
+                if (this.getAttribute('id') === 'park') {
+                	app.addOrRemoveGreenPark(map)
+                }
+              }
+
+              
+            } else {
+              app.removeMarker(eval(this.getAttribute('id')));
+            }
+          });
+
+          // initiate map
+          app.initMap(_65king);
+
+        });
+
+    </script>
+  </body>
+</html>
